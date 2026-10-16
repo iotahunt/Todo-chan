@@ -1,0 +1,198 @@
+@import "tailwindcss";
+
+:root {
+  --accent-color: #ff69b4;
+  --accent-rgb: 255, 105, 180;
+  --neon-glow: 0 0 16px rgba(255, 105, 180, 0.55), 0 0 32px rgba(255, 105, 180, 0.25);
+  --ambient-glow: radial-gradient(circle at 50% 0%, rgba(255, 105, 180, 0.12) 0%, transparent 60%);
+  
+  /* Light Theme Aesthetic Cream Palette */
+  --bg-cream: #FAF7F2;
+  --surface-cream: #FFFFFF;
+  --sidebar-cream: #F4EFE6;
+  --border-cream: #E6DFD3;
+  --text-cream-primary: #1C1917;
+  --text-cream-secondary: #78716C;
+}
+
+/* Light Theme Root Defaults when html does not have .dark */
+html:not(.dark) {
+  background-color: #FAF7F2 !important;
+  color: #1C1917 !important;
+}
+
+html.dark {
+  background-color: #020617 !important;
+  color: #f8fafc !important;
+}
+
+/* Theme Adaptive Classes */
+.app-bg {
+  background-color: #FAF7F2;
+  color: #1C1917;
+}
+html.dark .app-bg {
+  background-color: #020617;
+  color: #f8fafc;
+}
+
+.app-card {
+  background-color: #FFFFFF;
+  border-color: #E6DFD3;
+  color: #1C1917;
+}
+html.dark .app-card {
+  background-color: rgba(15, 23, 42, 0.88);
+  border-color: rgba(30, 41, 59, 0.9);
+  color: #f8fafc;
+}
+
+.app-sidebar {
+  background-color: #F4EFE6;
+  border-color: #E6DFD3;
+}
+html.dark .app-sidebar {
+  background-color: rgba(15, 23, 42, 0.95);
+  border-color: rgba(30, 41, 59, 0.9);
+}
+
+.app-subcard {
+  background-color: #FAF7F2;
+  border-color: #E6DFD3;
+}
+html.dark .app-subcard {
+  background-color: rgba(2, 6, 23, 0.7);
+  border-color: rgba(30, 41, 59, 0.9);
+}
+
+.app-text-primary {
+  color: #1C1917 !important;
+}
+html.dark .app-text-primary {
+  color: #FFFFFF !important;
+}
+
+.app-text-muted {
+  color: #78716C !important;
+}
+html.dark .app-text-muted {
+  color: #94a3b8 !important;
+}
+
+.app-border {
+  border-color: #E6DFD3 !important;
+}
+html.dark .app-border {
+  border-color: #1e293b !important;
+}
+
+.app-input {
+  background-color: #FFFFFF !important;
+  border-color: #D6CEC0 !important;
+  color: #1C1917 !important;
+}
+.app-input::placeholder {
+  color: #A8A29E !important;
+}
+html.dark .app-input {
+  background-color: #020617 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+html.dark .app-input::placeholder {
+  color: #64748b !important;
+}
+
+/* Dynamic Accent Theme Classes (Baby Pink Neon) */
+.btn-theme-primary {
+  background-color: var(--accent-color) !important;
+  color: #ffffff !important;
+  box-shadow: var(--neon-glow) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-theme-primary:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.btn-theme-primary:active {
+  transform: scale(0.97);
+}
+
+.btn-theme-gradient {
+  background: linear-gradient(135deg, var(--accent-color), rgba(var(--accent-rgb), 0.8)) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 18px rgba(var(--accent-rgb), 0.38) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-theme-gradient:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.btn-theme-gradient:active {
+  transform: scale(0.97);
+}
+
+.btn-theme-secondary {
+  background-color: rgba(var(--accent-rgb), 0.12) !important;
+  color: var(--accent-color) !important;
+  border: 1px solid rgba(var(--accent-rgb), 0.4) !important;
+  transition: all 0.2s ease;
+}
+
+.btn-theme-secondary:hover {
+  background-color: rgba(var(--accent-rgb), 0.22) !important;
+  border-color: var(--accent-color) !important;
+}
+
+.text-theme {
+  color: var(--accent-color) !important;
+}
+
+.bg-theme {
+  background-color: var(--accent-color) !important;
+}
+
+.bg-theme-soft {
+  background-color: rgba(var(--accent-rgb), 0.15) !important;
+}
+
+.border-theme {
+  border-color: var(--accent-color) !important;
+}
+
+.border-theme-soft {
+  border-color: rgba(var(--accent-rgb), 0.35) !important;
+}
+
+.glow-theme {
+  box-shadow: var(--neon-glow) !important;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+/* Smooth selection */
+::selection {
+  background-color: rgba(var(--accent-rgb), 0.35);
+  color: #ffffff;
+}

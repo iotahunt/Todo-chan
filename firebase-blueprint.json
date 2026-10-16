@@ -1,0 +1,167 @@
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "User profile with display settings and theme customizations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "username": { "type": "string", "maxLength": 30, "pattern": "^[a-zA-Z0-9_]{3,30}$" },
+        "normalizedUsername": { "type": "string", "maxLength": 30 },
+        "themeColor": { "type": "string", "maxLength": 30 },
+        "isDarkMode": { "type": "boolean" },
+        "isNeonMode": { "type": "boolean" },
+        "eisenhowerThreshold": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "username", "normalizedUsername", "createdAt"]
+    },
+    "usernameReservation": {
+      "title": "UsernameReservation",
+      "description": "Atomic reservation record mapping normalized username to userId",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "username": { "type": "string", "maxLength": 30 },
+        "reservedAt": { "type": "string" }
+      },
+      "required": ["userId", "username", "reservedAt"]
+    },
+    "todoList": {
+      "title": "TodoList",
+      "description": "A to-do list workspace with two-level password access credentials and sharing settings",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 500 },
+        "listId": { "type": "string", "maxLength": 32, "pattern": "^[a-zA-Z0-9_-]{4,32}$" },
+        "ownerId": { "type": "string", "maxLength": 128 },
+        "ownerUsername": { "type": "string", "maxLength": 30 },
+        "color": { "type": "string", "maxLength": 30 },
+        "viewPasswordHash": { "type": "string", "maxLength": 256 },
+        "editPasswordHash": { "type": "string", "maxLength": 256 },
+        "viewPasswordSalt": { "type": "string", "maxLength": 64 },
+        "editPasswordSalt": { "type": "string", "maxLength": 64 },
+        "allowViewOnlySharing": { "type": "boolean" },
+        "allowEditingSharing": { "type": "boolean" },
+        "allowViewerChat": { "type": "boolean" },
+        "allowViewerNotes": { "type": "boolean" },
+        "allowViewerComments": { "type": "boolean" },
+        "chatEnabled": { "type": "boolean" },
+        "isArchived": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "listId", "ownerId", "ownerUsername", "color", "createdAt"]
+    },
+    "membership": {
+      "title": "Membership",
+      "description": "Authorized member access grant to a list workspace (Owner, Editor, or Viewer)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "listId": { "type": "string", "maxLength": 32 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "username": { "type": "string", "maxLength": 30 },
+        "role": { "type": "string", "enum": ["owner", "editor", "viewer"] },
+        "canChat": { "type": "boolean" },
+        "grantedAt": { "type": "string" },
+        "revoked": { "type": "boolean" }
+      },
+      "required": ["id", "listId", "userId", "username", "role", "grantedAt"]
+    },
+    "task": {
+      "title": "Task",
+      "description": "A scheduled task belonging to a to-do list with comprehensive dimensions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "listId": { "type": "string", "maxLength": 32 },
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "assignedBy": { "type": "string", "maxLength": 50 },
+        "assignedTo": { "type": "string", "maxLength": 200 },
+        "startDate": { "type": "string", "maxLength": 30 },
+        "dueDate": { "type": "string", "maxLength": 30 },
+        "startTime": { "type": "string", "maxLength": 20 },
+        "dueTime": { "type": "string", "maxLength": 20 },
+        "isAllDay": { "type": "boolean" },
+        "importance": { "type": "number" },
+        "urgency": { "type": "number" },
+        "matrixQuadrant": { "type": "string", "enum": ["q1", "q2", "q3", "q4"] },
+        "matrixOverride": { "type": "boolean" },
+        "durationMinutes": { "type": "number" },
+        "color": { "type": "string", "maxLength": 30 },
+        "status": { "type": "string", "enum": ["todo", "in_progress", "completed", "blocked"] },
+        "notes": { "type": "string", "maxLength": 5000 },
+        "notesPrivate": { "type": "boolean" },
+        "creatorId": { "type": "string", "maxLength": 128 },
+        "creatorUsername": { "type": "string", "maxLength": 30 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "completedAt": { "type": "string" }
+      },
+      "required": ["id", "listId", "title", "importance", "urgency", "status", "createdAt"]
+    },
+    "comment": {
+      "title": "Comment",
+      "description": "Discussion comment on a shared task",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "taskId": { "type": "string", "maxLength": 128 },
+        "listId": { "type": "string", "maxLength": 32 },
+        "authorId": { "type": "string", "maxLength": 128 },
+        "authorUsername": { "type": "string", "maxLength": 30 },
+        "content": { "type": "string", "maxLength": 2000 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "taskId", "listId", "authorId", "authorUsername", "content", "createdAt"]
+    },
+    "chatMessage": {
+      "title": "ChatMessage",
+      "description": "Real-time live chat message inside a shared workspace",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "listId": { "type": "string", "maxLength": 32 },
+        "senderId": { "type": "string", "maxLength": 128 },
+        "senderUsername": { "type": "string", "maxLength": 30 },
+        "content": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "listId", "senderId", "senderUsername", "content", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/user" },
+      "description": "Public user profiles and preferences"
+    },
+    "/usernames/{normalizedUsername}": {
+      "schema": { "$ref": "#/entities/usernameReservation" },
+      "description": "Atomic username reservations"
+    },
+    "/lists/{listDocId}": {
+      "schema": { "$ref": "#/entities/todoList" },
+      "description": "To-do lists and workspace settings"
+    },
+    "/memberships/{membershipId}": {
+      "schema": { "$ref": "#/entities/membership" },
+      "description": "Workspace access grants and membership records"
+    },
+    "/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/task" },
+      "description": "Individual tasks across lists"
+    },
+    "/comments/{commentId}": {
+      "schema": { "$ref": "#/entities/comment" },
+      "description": "Task discussion comments"
+    },
+    "/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/chatMessage" },
+      "description": "Workspace real-time chat messages"
+    }
+  }
+}

@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny all unlisted paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Allow read/write with appropriate validation
+    match /users/{userId} {
+      allow read: if true;
+      allow create, update: if isValidId(userId) &&
+        request.resource.data.username is string &&
+        request.resource.data.username.size() >= 3 &&
+        request.resource.data.username.size() <= 30;
+      allow delete: if false;
+    }
+
+    match /usernames/{normalizedUsername} {
+      allow read: if true;
+      allow create: if normalizedUsername is string && normalizedUsername.size() >= 3;
+      allow update, delete: if false;
+    }
+
+    match /lists/{listDocId} {
+      allow read: if isValidId(listDocId);
+      allow create: if isValidId(listDocId) &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 &&
+        request.resource.data.name.size() <= 100 &&
+        request.resource.data.listId is string;
+      allow update: if isValidId(listDocId) &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 &&
+        request.resource.data.name.size() <= 100;
+      allow delete: if isValidId(listDocId);
+    }
+
+    match /memberships/{membershipId} {
+      allow read: if isValidId(membershipId);
+      allow create, update: if isValidId(membershipId) &&
+        request.resource.data.role in ['owner', 'editor', 'viewer'] &&
+        request.resource.data.listId is string;
+      allow delete: if isValidId(membershipId);
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isValidId(taskId);
+      allow create: if isValidId(taskId) &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() > 0 &&
+        request.resource.data.title.size() <= 200 &&
+        request.resource.data.listId is string;
+      allow update: if isValidId(taskId) &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() > 0 &&
+        request.resource.data.title.size() <= 200;
+      allow delete: if isValidId(taskId);
+    }
+
+    match /comments/{commentId} {
+      allow read: if isValidId(commentId);
+      allow create: if isValidId(commentId) &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() > 0 &&
+        request.resource.data.content.size() <= 2000;
+      allow update: if isValidId(commentId);
+      allow delete: if isValidId(commentId);
+    }
+
+    match /messages/{messageId} {
+      allow read: if isValidId(messageId);
+      allow create: if isValidId(messageId) &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() > 0 &&
+        request.resource.data.content.size() <= 1000;
+      allow update, delete: if false;
+    }
+  }
+}

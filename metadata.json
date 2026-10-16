@@ -1,0 +1,6 @@
+{
+  "name": "Todo-chan",
+  "description": "Minimalistic, personalized, multi-user day planner & Progressive Web App with two-level password access, calendar, Eisenhower Matrix, and anime companion Toco-chan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
