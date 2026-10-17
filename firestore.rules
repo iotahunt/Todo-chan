@@ -12,37 +12,26 @@ service cloud.firestore {
       return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function existing() {
-      return resource.data;
-    }
-
-    // Allow read/write with appropriate validation
+    // User profiles
     match /users/{userId} {
       allow read: if true;
-      allow create, update: if isValidId(userId) &&
-        request.resource.data.username is string &&
-        request.resource.data.username.size() >= 3 &&
-        request.resource.data.username.size() <= 30;
-      allow delete: if false;
+      allow create, update: if isValidId(userId);
+      allow delete: if isValidId(userId);
     }
 
     match /usernames/{normalizedUsername} {
       allow read: if true;
-      allow create: if normalizedUsername is string && normalizedUsername.size() >= 3;
-      allow update, delete: if false;
+      allow create: if normalizedUsername is string && normalizedUsername.size() >= 1;
+      allow update, delete: if true;
     }
 
+    // Workspaces and Shared Lists
     match /lists/{listDocId} {
       allow read: if isValidId(listDocId);
       allow create: if isValidId(listDocId) &&
         request.resource.data.name is string &&
         request.resource.data.name.size() > 0 &&
-        request.resource.data.name.size() <= 100 &&
-        request.resource.data.listId is string;
+        request.resource.data.name.size() <= 100;
       allow update: if isValidId(listDocId) &&
         request.resource.data.name is string &&
         request.resource.data.name.size() > 0 &&
@@ -53,41 +42,61 @@ service cloud.firestore {
     match /memberships/{membershipId} {
       allow read: if isValidId(membershipId);
       allow create, update: if isValidId(membershipId) &&
-        request.resource.data.role in ['owner', 'editor', 'viewer'] &&
-        request.resource.data.listId is string;
+        request.resource.data.role in ['owner', 'editor', 'viewer'];
       allow delete: if isValidId(membershipId);
     }
 
+    // Main Planner Tasks
     match /tasks/{taskId} {
       allow read: if isValidId(taskId);
       allow create: if isValidId(taskId) &&
         request.resource.data.title is string &&
         request.resource.data.title.size() > 0 &&
-        request.resource.data.title.size() <= 200 &&
-        request.resource.data.listId is string;
+        request.resource.data.title.size() <= 300;
       allow update: if isValidId(taskId) &&
         request.resource.data.title is string &&
         request.resource.data.title.size() > 0 &&
-        request.resource.data.title.size() <= 200;
+        request.resource.data.title.size() <= 300;
       allow delete: if isValidId(taskId);
     }
 
+    // Unorganized Tasks (Talk to Todo-chan)
+    match /unorganized_tasks/{taskId} {
+      allow read: if isValidId(taskId);
+      allow create, update: if isValidId(taskId) &&
+        request.resource.data.text is string &&
+        request.resource.data.text.size() > 0 &&
+        request.resource.data.text.size() <= 1000;
+      allow delete: if isValidId(taskId);
+    }
+
+    // Private Wellness Check-ins & Daily Reflections
+    match /wellness_checkins/{checkinId} {
+      allow read, write, delete: if isValidId(checkinId);
+    }
+
+    // Care Tasks
+    match /care_tasks/{careTaskId} {
+      allow read, write, delete: if isValidId(careTaskId);
+    }
+
+    // Task Comments
     match /comments/{commentId} {
       allow read: if isValidId(commentId);
       allow create: if isValidId(commentId) &&
         request.resource.data.content is string &&
         request.resource.data.content.size() > 0 &&
         request.resource.data.content.size() <= 2000;
-      allow update: if isValidId(commentId);
-      allow delete: if isValidId(commentId);
+      allow update, delete: if isValidId(commentId);
     }
 
+    // Real-time Chat Messages per List
     match /messages/{messageId} {
       allow read: if isValidId(messageId);
       allow create: if isValidId(messageId) &&
         request.resource.data.content is string &&
         request.resource.data.content.size() > 0 &&
-        request.resource.data.content.size() <= 1000;
+        request.resource.data.content.size() <= 2000;
       allow update, delete: if false;
     }
   }

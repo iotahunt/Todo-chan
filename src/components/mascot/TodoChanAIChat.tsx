@@ -18,6 +18,8 @@ interface TodoChanAIChatProps {
   onAddTask: (taskData: Partial<Task>) => Promise<void>;
   onCreateList: (listData: Partial<TodoList>) => Promise<void>;
   onCompleteTask: (task: Task) => Promise<void>;
+  onSaveUnorganizedTask?: (text: string) => Promise<void>;
+  onTaskAddedToast?: (title: string, destination: string) => void;
   isModal?: boolean;
   onCloseModal?: () => void;
 }
@@ -28,6 +30,8 @@ export const TodoChanAIChat: React.FC<TodoChanAIChatProps> = ({
   onAddTask,
   onCreateList,
   onCompleteTask,
+  onSaveUnorganizedTask,
+  onTaskAddedToast,
   isModal = false,
   onCloseModal,
 }) => {
@@ -80,7 +84,16 @@ export const TodoChanAIChat: React.FC<TodoChanAIChatProps> = ({
       const data = await res.json();
       let actionNote: string | undefined = undefined;
 
-      if (data.action === 'create_task' && data.taskData) {
+      if (data.action === 'capture_unorganized') {
+        const unorgText = data.unorganizedText || textToSend;
+        if (onSaveUnorganizedTask) {
+          await onSaveUnorganizedTask(unorgText);
+        }
+        if (onTaskAddedToast) {
+          onTaskAddedToast(unorgText, 'Unorganized Tasks Inbox');
+        }
+        actionNote = `Saved to Unorganized Tasks! You can review it in your Unorganized Inbox. ✨`;
+      } else if (data.action === 'create_task' && data.taskData) {
         // Find best list or fallback to first list
         let chosenListId = data.taskData.suggestedListId;
         if (!chosenListId || !lists.some((l) => l.id === chosenListId)) {
@@ -93,9 +106,15 @@ export const TodoChanAIChat: React.FC<TodoChanAIChatProps> = ({
         });
         const listName = lists.find((l) => l.id === chosenListId)?.name || 'General';
         actionNote = `Task "${data.taskData.title}" created in [${listName}] and mapped to Eisenhower ${data.taskData.matrixQuadrant?.toUpperCase()}!`;
+        if (onTaskAddedToast) {
+          onTaskAddedToast(data.taskData.title, listName);
+        }
       } else if (data.action === 'create_list' && data.listData) {
         await onCreateList(data.listData);
         actionNote = `List "${data.listData.name}" created with 2-level password!`;
+        if (onTaskAddedToast) {
+          onTaskAddedToast(data.listData.name, 'Workspaces');
+        }
       } else if (data.action === 'complete_task' && data.targetTaskId) {
         const target = tasks.find((t) => t.id === data.targetTaskId);
         if (target) {

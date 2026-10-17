@@ -7,10 +7,14 @@ export type MatrixQuadrant = 'q1' | 'q2' | 'q3' | 'q4';
 export interface User {
   id: string;
   username: string;
+  email?: string;
+  emailVerified?: boolean;
   themeColor: string;
   isDarkMode: boolean;
   isNeonMode: boolean;
   eisenhowerThreshold: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface TodoList {
@@ -77,6 +81,7 @@ export interface Task {
   createdAt: string;
   updatedAt?: string;
   completedAt?: string | null;
+  isCareTask?: boolean;
 }
 
 export interface Comment {
@@ -95,5 +100,58 @@ export interface ChatMessage {
   senderId: string;
   senderUsername: string;
   content: string;
+  createdAt: string;
+}
+
+// Talk to Todo-chan Task Capture Types
+export interface UnorganizedTask {
+  id: string;
+  text: string;
+  userId: string;
+  scheduledDate?: string;
+  notes?: string;
+  isCompleted?: boolean;
+  isOrganized?: boolean;
+  destinationListId?: string;
+  createdAt: string;
+}
+
+// Wellness, Moods & Care Task Types
+export type MoodType =
+  | 'happy'
+  | 'excited'
+  | 'calm'
+  | 'okay'
+  | 'tired'
+  | 'stressed'
+  | 'sad'
+  | 'anxious'
+  | 'overwhelmed'
+  | 'frustrated';
+
+export interface WellnessCheckin {
+  id: string;
+  userId: string;
+  mood: MoodType;
+  intensity: number; // 1 to 5
+  reflection?: {
+    day?: string;
+    cause?: string;
+    proudOf?: string;
+    needsNow?: string;
+    tomorrowBetter?: string;
+  };
+  createdAt: string;
+}
+
+export interface CareTask {
+  id: string;
+  userId: string;
+  title: string;
+  category: 'hydration' | 'nutrition' | 'break' | 'movement' | 'mental' | 'rest' | 'custom';
+  isCompleted: boolean;
+  isPrivate: boolean;
+  linkedTaskId?: string;
+  scheduledDate?: string;
   createdAt: string;
 }

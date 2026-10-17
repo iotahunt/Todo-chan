@@ -13,32 +13,37 @@ import {
   Sliders,
   Search,
   Filter,
-  Bot,
   Tag,
+  Heart,
+  Smile,
 } from 'lucide-react';
-import { Task, TodoList } from '../../types/index.ts';
+import { Task, TodoList, UnorganizedTask } from '../../types/index.ts';
 import heroBannerImg from '../../assets/images/todochan_hero_banner_1791993044637.jpg';
 import { useTheme } from '../../context/ThemeContext.tsx';
-import { TodoChanAIChat } from '../mascot/TodoChanAIChat.tsx';
+import { TalkToTodoChan } from '../capture/TalkToTodoChan.tsx';
 
 interface PersonalDashboardProps {
   username: string;
   tasks: Task[];
   lists: TodoList[];
+  unorganizedTasks?: UnorganizedTask[];
   onOpenCreateTask: () => void;
   onOpenCreateList: () => void;
   onSelectTask: (task: Task) => void;
   onSelectList?: (list: TodoList) => void;
-  onNavigateTab: (tab: 'lists' | 'calendar' | 'matrix' | 'connect') => void;
+  onNavigateTab: (tab: 'lists' | 'calendar' | 'matrix' | 'connect' | 'unorganized' | 'chat') => void;
   onToggleComplete: (task: Task) => void;
   onSaveTask: (taskData: Partial<Task>) => Promise<void>;
   onCreateListSubmit: (listData: Partial<TodoList>) => Promise<void>;
+  onOpenUnorganizedView?: () => void;
+  onOpenWellnessTracker?: () => void;
 }
 
 export const PersonalDashboard: React.FC<PersonalDashboardProps> = ({
   username,
   tasks,
   lists,
+  unorganizedTasks = [],
   onOpenCreateTask,
   onOpenCreateList,
   onSelectTask,
@@ -47,6 +52,8 @@ export const PersonalDashboard: React.FC<PersonalDashboardProps> = ({
   onToggleComplete,
   onSaveTask,
   onCreateListSubmit,
+  onOpenUnorganizedView,
+  onOpenWellnessTracker,
 }) => {
   const { themeColor, isDarkMode, isNeonMode } = useTheme();
   const [activeFeedTab, setActiveFeedTab] = useState<'all' | 'today' | 'q1' | 'upcoming' | 'completed'>('all');
@@ -54,29 +61,25 @@ export const PersonalDashboard: React.FC<PersonalDashboardProps> = ({
   const [selectedListFilter, setSelectedListFilter] = useState<string>('all');
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const currentDateFormatted = new Date().toLocaleDateString('default', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
 
-  const todayTasks = tasks.filter((t) => t.dueDate === todayStr || t.startDate === todayStr);
+  const todayTasks = tasks.filter(
+    (t) => t.dueDate === todayStr || t.startDate === todayStr
+  );
+  const q1Tasks = tasks.filter((t) => t.matrixQuadrant === 'q1' && t.status !== 'completed');
+  const completedToday = tasks.filter(
+    (t) => t.status === 'completed' && t.completedAt?.startsWith(todayStr)
+  );
   const overdueTasks = tasks.filter(
     (t) => t.dueDate && t.dueDate < todayStr && t.status !== 'completed'
   );
-  const upcomingTasks = tasks.filter(
-    (t) => t.dueDate && t.dueDate > todayStr && t.status !== 'completed'
-  );
-  const q1Tasks = tasks.filter(
-    (t) => t.matrixQuadrant === 'q1' && t.status !== 'completed'
-  );
-  const completedTasks = tasks.filter((t) => t.status === 'completed');
 
-  const total = tasks.length;
-  const completedCount = completedTasks.length;
-  const progressPercent = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+  const currentDateFormatted = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
 
-  // Filtered task list for main feed
+  // Filtered tasks for feed view
   const feedTasks = tasks.filter((t) => {
     // Tab filter
     if (activeFeedTab === 'today') {
@@ -111,10 +114,12 @@ export const PersonalDashboard: React.FC<PersonalDashboardProps> = ({
       {/* Hero Welcome Banner */}
       <div
         className={`relative rounded-3xl overflow-hidden border shadow-xl min-h-[160px] flex items-center transition-colors ${
-          isDarkMode
-            ? 'border-slate-800 bg-slate-900'
-            : 'border-[#E6DFD3] bg-[#F4EFE6]'
+          isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-[#E6DFD3] bg-[#F4EFE6]'
         }`}
+        style={{
+          boxShadow: 'var(--neon-card-glow)',
+          borderColor: 'rgba(var(--accent-rgb), 0.4)',
+        }}
       >
         <img
           src={heroBannerImg}
@@ -152,11 +157,20 @@ export const PersonalDashboard: React.FC<PersonalDashboardProps> = ({
                 ? `You have ${overdueTasks.length} overdue task${overdueTasks.length > 1 ? 's' : ''} that need attention.`
                 : todayTasks.length > 0
                 ? `You have ${todayTasks.length} task${todayTasks.length > 1 ? 's' : ''} scheduled for today.`
-                : "You're all caught up! Instruct Todo-chan or plan your next goals."}
+                : "You're all caught up! Capture new goals with Todo-chan or plan your week."}
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {onOpenWellnessTracker && (
+              <button
+                onClick={onOpenWellnessTracker}
+                className="btn-theme-secondary flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition active:scale-95"
+              >
+                <Smile className="w-4 h-4" />
+                <span>Wellness Tracker</span>
+              </button>
+            )}
             <button
               onClick={onOpenCreateTask}
               className="btn-theme-gradient flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white transition active:scale-95 shadow-md"
@@ -179,38 +193,15 @@ export const PersonalDashboard: React.FC<PersonalDashboardProps> = ({
         </div>
       </div>
 
-      {/* Todo-chan AI Integrated Natural Language Companion Card */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h2
-            className={`text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${
-              isDarkMode ? 'text-slate-400' : 'text-stone-500'
-            }`}
-          >
-            <Bot className="w-4 h-4 text-theme" />
-            <span>Todo-chan AI Assistant (Home Page Chat)</span>
-          </h2>
-          <span className="text-[11px] text-pink-500 font-semibold">
-            Type anything to create tasks & auto-assign ✨
-          </span>
-        </div>
-        <TodoChanAIChat
-          lists={lists}
-          tasks={tasks}
-          onAddTask={onSaveTask}
-          onCreateList={onCreateListSubmit}
-          onCompleteTask={async (t) => onToggleComplete(t)}
-        />
-      </div>
+      {/* Talk to Todo-chan: Personal Task-Capture Space */}
+      <TalkToTodoChan
+        onOpenUnorganizedView={onOpenUnorganizedView}
+      />
 
-      {/* Daily Overview Metric Cards */}
+      {/* Daily Overview Metric Cards with Dynamic Neon Glow */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div
-          className={`border rounded-2xl p-4 shadow-xs transition-colors ${
-            isDarkMode
-              ? 'bg-slate-900/80 border-slate-800'
-              : 'bg-white border-[#E6DFD3]'
-          }`}
+          className={`border rounded-2xl p-4 transition-colors app-card`}
         >
           <div
             className={`flex items-center justify-between text-xs mb-2 ${
@@ -237,11 +228,7 @@ export const PersonalDashboard: React.FC<PersonalDashboardProps> = ({
         </div>
 
         <div
-          className={`border rounded-2xl p-4 shadow-xs transition-colors ${
-            isDarkMode
-              ? 'bg-slate-900/80 border-slate-800'
-              : 'bg-white border-[#E6DFD3]'
-          }`}
+          className={`border rounded-2xl p-4 transition-colors app-card`}
         >
           <div
             className={`flex items-center justify-between text-xs mb-2 ${
@@ -268,11 +255,7 @@ export const PersonalDashboard: React.FC<PersonalDashboardProps> = ({
         </div>
 
         <div
-          className={`border rounded-2xl p-4 shadow-xs transition-colors ${
-            isDarkMode
-              ? 'bg-slate-900/80 border-slate-800'
-              : 'bg-white border-[#E6DFD3]'
-          }`}
+          className={`border rounded-2xl p-4 transition-colors app-card`}
         >
           <div
             className={`flex items-center justify-between text-xs mb-2 ${
@@ -294,304 +277,262 @@ export const PersonalDashboard: React.FC<PersonalDashboardProps> = ({
           </span>
         </div>
 
+        {/* Unorganized Tasks Quick Card */}
         <div
-          className={`border rounded-2xl p-4 shadow-xs transition-colors ${
-            isDarkMode
-              ? 'bg-slate-900/80 border-slate-800'
-              : 'bg-white border-[#E6DFD3]'
-          }`}
+          onClick={onOpenUnorganizedView}
+          className={`border rounded-2xl p-4 transition-all cursor-pointer app-card hover:scale-[1.02]`}
         >
           <div
             className={`flex items-center justify-between text-xs mb-2 ${
               isDarkMode ? 'text-slate-400' : 'text-stone-500'
             }`}
           >
-            <span>Completion Rate</span>
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div className="text-2xl font-black font-mono text-emerald-500 tabular-nums">
-            {progressPercent}%
+            <span>Unorganized Inbox</span>
+            <Sparkles className="w-4 h-4 text-theme" />
           </div>
           <div
-            className={`w-full h-1.5 rounded-full mt-2 overflow-hidden ${
-              isDarkMode ? 'bg-slate-800' : 'bg-stone-200'
-            }`}
+            className={`text-2xl font-black font-mono tabular-nums text-theme`}
           >
-            <div
-              className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-              style={{ width: `${progressPercent}%` }}
-            />
+            {unorganizedTasks.length}
           </div>
+          <span
+            className={`text-[11px] mt-1 block text-theme font-medium flex items-center gap-1`}
+          >
+            <span>Tap to organize</span>
+            <ArrowRight className="w-3 h-3" />
+          </span>
         </div>
       </div>
 
-      {/* Main Task Feed Section */}
+      {/* All Tasks Feed Section */}
       <div
-        className={`border rounded-2xl p-5 shadow-lg transition-colors ${
-          isDarkMode
-            ? 'bg-slate-900/80 border-slate-800'
-            : 'bg-white border-[#E6DFD3]'
-        }`}
+        className={`border rounded-3xl p-5 sm:p-6 transition-colors app-card`}
       >
-        {/* Header & View Controls */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-inherit">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-stone-200 dark:border-slate-800">
           <div>
-            <h3
-              className={`text-base font-bold flex items-center gap-2 ${
+            <h2
+              className={`text-lg font-black tracking-tight ${
                 isDarkMode ? 'text-white' : 'text-stone-900'
               }`}
             >
-              <span>Task Feed & Daily Schedule</span>
-              <span
-                className="text-xs px-2 py-0.5 rounded-full font-mono font-bold"
-                style={{
-                  backgroundColor: 'rgba(255, 105, 180, 0.15)',
-                  color: '#ff69b4',
-                }}
-              >
-                {feedTasks.length} task{feedTasks.length !== 1 ? 's' : ''}
-              </span>
-            </h3>
+              Task Feed & All Tasks
+            </h2>
             <p
               className={`text-xs mt-0.5 ${
                 isDarkMode ? 'text-slate-400' : 'text-stone-500'
               }`}
             >
-              All tasks automatically mapped to Eisenhower Matrix & Calendar.
+              Showing {feedTasks.length} of {tasks.length} total tasks
             </p>
           </div>
 
+          {/* Search and List Filter */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Search Input */}
             <div className="relative">
-              <Search
-                className={`w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 ${
-                  isDarkMode ? 'text-slate-400' : 'text-stone-400'
-                }`}
-              />
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-stone-400" />
               <input
                 type="text"
+                placeholder="Search tasks..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search tasks..."
-                className={`text-xs pl-8 pr-3 py-1.5 rounded-xl border focus:outline-hidden focus:ring-1 focus:ring-pink-400 transition w-36 sm:w-44 ${
-                  isDarkMode
-                    ? 'bg-slate-950 border-slate-700/80 text-white placeholder-slate-500'
-                    : 'bg-[#FAF7F2] border-[#D6CEC0] text-stone-900 placeholder-stone-400'
-                }`}
+                className="pl-9 pr-3 py-1.5 rounded-xl text-xs app-input w-48 sm:w-56"
               />
             </div>
 
-            {/* List Selector Dropdown */}
-            {lists.length > 0 && (
-              <select
-                value={selectedListFilter}
-                onChange={(e) => setSelectedListFilter(e.target.value)}
-                className={`text-xs px-3 py-1.5 rounded-xl border focus:outline-hidden transition ${
-                  isDarkMode
-                    ? 'bg-slate-950 border-slate-700/80 text-white'
-                    : 'bg-[#FAF7F2] border-[#D6CEC0] text-stone-900'
-                }`}
-              >
-                <option value="all">All To-Do Lists ({lists.length})</option>
-                {lists.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            <button
-              onClick={onOpenCreateTask}
-              className="btn-theme-gradient text-xs font-bold text-white px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm active:scale-95 transition"
+            <select
+              value={selectedListFilter}
+              onChange={(e) => setSelectedListFilter(e.target.value)}
+              className="px-3 py-1.5 rounded-xl text-xs app-input cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Task</span>
-            </button>
+              <option value="all">All Lists ({lists.length})</option>
+              {lists.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        {/* View Tabs */}
-        <div className="flex items-center gap-2 pt-3 pb-2 overflow-x-auto no-scrollbar">
+        {/* Tab Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto py-3 no-scrollbar border-b border-stone-100 dark:border-slate-800/80">
           {[
-            { id: 'all', label: `All Tasks (${tasks.length})` },
-            { id: 'today', label: `Today's Schedule (${todayTasks.length})` },
-            { id: 'q1', label: `Do First / Q1 (${q1Tasks.length})` },
-            { id: 'upcoming', label: `Upcoming (${upcomingTasks.length})` },
-            { id: 'completed', label: `Completed (${completedTasks.length})` },
-          ].map((tab) => {
-            const isActive = activeFeedTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveFeedTab(tab.id as any)}
-                className={`whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                  isActive
-                    ? 'btn-theme-gradient text-white shadow-xs'
-                    : isDarkMode
-                    ? 'bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white'
-                    : 'bg-[#F4EFE6] hover:bg-[#EAE3D6] text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Task Cards Feed */}
-        <div className="mt-3 space-y-2.5">
-          {feedTasks.length === 0 ? (
-            <div
-              className={`py-12 text-center rounded-2xl border border-dashed ${
-                isDarkMode
-                  ? 'border-slate-800 text-slate-400 bg-slate-950/40'
-                  : 'border-[#E6DFD3] text-stone-500 bg-[#FAF7F2]'
+            { id: 'all', label: 'All Tasks', count: tasks.length },
+            { id: 'today', label: "Today's Schedule", count: todayTasks.length },
+            { id: 'q1', label: 'Do First (Q1)', count: q1Tasks.length },
+            { id: 'upcoming', label: 'Upcoming', count: tasks.filter((t) => t.dueDate && t.dueDate > todayStr && t.status !== 'completed').length },
+            { id: 'completed', label: 'Completed', count: tasks.filter((t) => t.status === 'completed').length },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveFeedTab(tab.id as any)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 flex items-center gap-1.5 ${
+                activeFeedTab === tab.id
+                  ? 'btn-theme-primary text-white'
+                  : isDarkMode
+                  ? 'bg-slate-800/60 text-slate-300 hover:bg-slate-800'
+                  : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
               }`}
             >
-              <Sparkles className="w-8 h-8 mx-auto mb-2 text-pink-400 animate-pulse" />
-              <p className="text-sm font-bold">No tasks found in this view</p>
-              <p className="text-xs mt-1">
-                Click "Quick Add Task" above or ask Todo-chan AI to create one!
-              </p>
-              <button
-                onClick={onOpenCreateTask}
-                className="mt-3 btn-theme-gradient px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm inline-flex items-center gap-1.5"
+              <span>{tab.label}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                  activeFeedTab === tab.id
+                    ? 'bg-white/20 text-white'
+                    : isDarkMode
+                    ? 'bg-slate-700 text-slate-300'
+                    : 'bg-stone-200 text-stone-700'
+                }`}
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Task Now</span>
-              </button>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Tasks List */}
+        <div className="pt-3">
+          {feedTasks.length === 0 ? (
+            <div className="text-center py-12">
+              <CheckCircle2 className="w-10 h-10 text-stone-300 dark:text-slate-700 mx-auto mb-2" />
+              <p
+                className={`text-sm font-semibold ${
+                  isDarkMode ? 'text-slate-400' : 'text-stone-500'
+                }`}
+              >
+                No tasks found in this view
+              </p>
+              <p
+                className={`text-xs mt-1 ${
+                  isDarkMode ? 'text-slate-600' : 'text-stone-400'
+                }`}
+              >
+                Create a new task with the button above or type in Talk to Todo-chan!
+              </p>
             </div>
           ) : (
-            feedTasks.map((t) => {
-              const isDone = t.status === 'completed';
-              const parentList = lists.find((l) => l.id === t.listId);
-              const quadrantBadge: Record<string, { label: string; cls: string }> = {
-                q1: { label: 'Q1 · Do First', cls: 'text-rose-500 bg-rose-500/10 border-rose-500/30' },
-                q2: { label: 'Q2 · Schedule', cls: 'text-purple-500 bg-purple-500/10 border-purple-500/30' },
-                q3: { label: 'Q3 · Delegate', cls: 'text-amber-500 bg-amber-500/10 border-amber-500/30' },
-                q4: { label: 'Q4 · Eliminate', cls: 'text-slate-400 bg-slate-500/10 border-slate-500/30' },
-              };
-              const qInfo = quadrantBadge[t.matrixQuadrant] || quadrantBadge.q2;
+            <div className="space-y-2">
+              {feedTasks.map((t) => {
+                const parentList = lists.find((l) => l.id === t.listId);
+                const isOverdue = t.dueDate && t.dueDate < todayStr && t.status !== 'completed';
+                const isCompleted = t.status === 'completed';
 
-              return (
-                <div
-                  key={t.id}
-                  onClick={() => onSelectTask(t)}
-                  className={`p-3.5 rounded-2xl border transition flex items-center justify-between gap-3 cursor-pointer ${
-                    isDone ? 'opacity-55' : ''
-                  } ${
-                    isDarkMode
-                      ? 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
-                      : 'bg-white border-[#E6DFD3] hover:border-[#D6CEC0] shadow-xs'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleComplete(t);
-                      }}
-                      className="text-slate-400 hover:text-pink-500 transition shrink-0"
-                    >
-                      {isDone ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                      ) : (
-                        <Circle className="w-5 h-5" />
-                      )}
-                    </button>
-
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: t.color || parentList?.color || themeColor }}
-                        />
-                        <h4
-                          className={`text-xs font-bold truncate ${
-                            isDone
-                              ? 'line-through text-slate-400'
-                              : isDarkMode
-                              ? 'text-white'
-                              : 'text-stone-900'
-                          }`}
-                        >
-                          {t.title}
-                        </h4>
-
-                        {/* List Badge */}
-                        {parentList && (
-                          <span
-                            className="text-[10px] font-semibold px-2 py-0.5 rounded-md border truncate max-w-[120px]"
-                            style={{
-                              backgroundColor: `${parentList.color}15`,
-                              color: parentList.color,
-                              borderColor: `${parentList.color}35`,
-                            }}
-                          >
-                            {parentList.name}
-                          </span>
-                        )}
-
-                        {/* Eisenhower Quadrant Badge */}
-                        <span
-                          className={`text-[10px] font-mono px-2 py-0.5 rounded-md border font-semibold ${qInfo.cls}`}
-                        >
-                          {qInfo.label}
-                        </span>
-                      </div>
-
-                      <div
-                        className={`text-[11px] mt-1 flex flex-wrap items-center gap-3 ${
-                          isDarkMode ? 'text-slate-400' : 'text-stone-500'
+                return (
+                  <div
+                    key={t.id}
+                    onClick={() => onSelectTask(t)}
+                    className={`p-3 sm:p-3.5 rounded-2xl border flex items-center justify-between gap-3 transition-all cursor-pointer hover:translate-x-0.5 ${
+                      isCompleted
+                        ? 'opacity-60 bg-emerald-500/5'
+                        : isDarkMode
+                        ? 'bg-slate-900/60 hover:bg-slate-800/80 border-slate-800'
+                        : 'bg-white hover:bg-stone-50 border-[#E6DFD3]'
+                    }`}
+                    style={{
+                      borderLeftWidth: '4px',
+                      borderLeftColor: t.color || parentList?.color || themeColor,
+                    }}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleComplete(t);
+                        }}
+                        className={`w-5 h-5 rounded-lg border flex items-center justify-center shrink-0 transition ${
+                          isCompleted
+                            ? 'bg-theme border-theme text-white'
+                            : 'border-stone-300 dark:border-slate-600 hover:border-pink-400'
                         }`}
                       >
-                        <span className="flex items-center gap-1">
-                          <CalendarIcon className="w-3 h-3 text-pink-400" />
-                          <span>
-                            {t.dueDate ? `Due ${t.dueDate}` : 'No deadline'}
+                        {isCompleted && <CheckCircle2 className="w-3.5 h-3.5" />}
+                      </button>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`text-xs font-semibold truncate ${
+                              isCompleted
+                                ? 'line-through text-stone-400 dark:text-slate-500'
+                                : isDarkMode
+                                ? 'text-white'
+                                : 'text-stone-900'
+                            }`}
+                          >
+                            {t.title}
                           </span>
-                        </span>
-                        {!t.isAllDay && t.startTime && (
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-purple-400" />
-                            <span>
-                              {t.startTime} {t.dueTime ? `- ${t.dueTime}` : ''}
+                          {t.isCareTask && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-pink-500/10 text-theme border border-pink-500/30">
+                              Care Task 🌸
                             </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px]">
+                          {parentList && (
+                            <span
+                              className="text-[10px] font-bold px-1.5 py-0.2 rounded-md font-mono"
+                              style={{
+                                backgroundColor: `${parentList.color}15`,
+                                color: parentList.color,
+                              }}
+                            >
+                              {parentList.name}
+                            </span>
+                          )}
+
+                          {t.dueDate && (
+                            <span
+                              className={`flex items-center gap-1 font-mono text-[10px] ${
+                                isOverdue
+                                  ? 'text-rose-500 font-bold'
+                                  : isDarkMode
+                                  ? 'text-slate-400'
+                                  : 'text-stone-500'
+                              }`}
+                            >
+                              <CalendarIcon className="w-3 h-3" />
+                              <span>{t.dueDate}</span>
+                              {t.dueTime && <span>at {t.dueTime}</span>}
+                              {isOverdue && <span>(Overdue)</span>}
+                            </span>
+                          )}
+
+                          <span
+                            className="text-[10px] px-1.5 py-0.2 rounded-md font-bold uppercase"
+                            style={{
+                              backgroundColor:
+                                t.matrixQuadrant === 'q1'
+                                  ? 'rgba(244,63,94,0.15)'
+                                  : t.matrixQuadrant === 'q2'
+                                  ? 'rgba(59,130,246,0.15)'
+                                  : t.matrixQuadrant === 'q3'
+                                  ? 'rgba(234,179,8,0.15)'
+                                  : 'rgba(100,116,139,0.15)',
+                              color:
+                                t.matrixQuadrant === 'q1'
+                                  ? '#f43f5e'
+                                  : t.matrixQuadrant === 'q2'
+                                  ? '#3b82f6'
+                                  : t.matrixQuadrant === 'q3'
+                                  ? '#eab308'
+                                  : '#64748b',
+                            }}
+                          >
+                            {t.matrixQuadrant.toUpperCase()}
                           </span>
-                        )}
-                        <span>{t.durationMinutes || 30} mins</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Urgency & Importance Scores */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded-md border font-bold ${
-                        isDarkMode
-                          ? 'bg-slate-900 text-slate-300 border-slate-800'
-                          : 'bg-[#F4EFE6] text-stone-700 border-[#E6DFD3]'
-                      }`}
-                      title="Urgency score (0-10)"
-                    >
-                      Urg: {t.urgency ?? 5}
-                    </span>
-                    <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded-md border font-bold ${
-                        isDarkMode
-                          ? 'bg-slate-900 text-slate-300 border-slate-800'
-                          : 'bg-[#F4EFE6] text-stone-700 border-[#E6DFD3]'
-                      }`}
-                      title="Importance score (0-10)"
-                    >
-                      Imp: {t.importance ?? 5}
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0 text-stone-400">
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
                   </div>
-                </div>
-              );
-            })
+                );
+              })}
+            </div>
           )}
         </div>
       </div>

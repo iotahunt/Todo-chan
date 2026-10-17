@@ -3,8 +3,12 @@
 :root {
   --accent-color: #ff69b4;
   --accent-rgb: 255, 105, 180;
-  --neon-glow: 0 0 16px rgba(255, 105, 180, 0.55), 0 0 32px rgba(255, 105, 180, 0.25);
-  --ambient-glow: radial-gradient(circle at 50% 0%, rgba(255, 105, 180, 0.12) 0%, transparent 60%);
+  --neon-glow: 0 0 14px rgba(255, 105, 180, 0.7), 0 0 28px rgba(255, 105, 180, 0.35);
+  --neon-card-glow: 0 0 16px rgba(255, 105, 180, 0.35), inset 0 0 12px rgba(255, 105, 180, 0.12);
+  --neon-card-hover: 0 0 25px rgba(255, 105, 180, 0.55), inset 0 0 16px rgba(255, 105, 180, 0.2);
+  --neon-text-glow: 0 0 10px rgba(255, 105, 180, 0.8), 0 0 18px rgba(255, 105, 180, 0.4);
+  --neon-border: 1.5px solid rgba(255, 105, 180, 0.7);
+  --ambient-glow: radial-gradient(circle at 50% 0%, rgba(255, 105, 180, 0.18) 0%, transparent 65%);
   
   /* Light Theme Aesthetic Cream Palette */
   --bg-cream: #FAF7F2;
@@ -38,13 +42,24 @@ html.dark .app-bg {
 
 .app-card {
   background-color: #FFFFFF;
-  border-color: #E6DFD3;
+  border-color: rgba(var(--accent-rgb), 0.35);
+  box-shadow: var(--neon-card-glow);
   color: #1C1917;
+  transition: all 0.2s ease-in-out;
+}
+.app-card:hover {
+  box-shadow: var(--neon-card-hover);
+  border-color: rgba(var(--accent-rgb), 0.65);
 }
 html.dark .app-card {
-  background-color: rgba(15, 23, 42, 0.88);
-  border-color: rgba(30, 41, 59, 0.9);
+  background-color: rgba(15, 23, 42, 0.92);
+  border-color: rgba(var(--accent-rgb), 0.4);
+  box-shadow: var(--neon-card-glow);
   color: #f8fafc;
+}
+html.dark .app-card:hover {
+  box-shadow: var(--neon-card-hover);
+  border-color: var(--accent-color);
 }
 
 .app-sidebar {
@@ -58,11 +73,13 @@ html.dark .app-sidebar {
 
 .app-subcard {
   background-color: #FAF7F2;
-  border-color: #E6DFD3;
+  border-color: rgba(var(--accent-rgb), 0.3);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.15);
 }
 html.dark .app-subcard {
   background-color: rgba(2, 6, 23, 0.7);
-  border-color: rgba(30, 41, 59, 0.9);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.2);
 }
 
 .app-text-primary {
@@ -88,22 +105,58 @@ html.dark .app-border {
 
 .app-input {
   background-color: #FFFFFF !important;
-  border-color: #D6CEC0 !important;
+  border: 1.5px solid rgba(var(--accent-rgb), 0.4) !important;
   color: #1C1917 !important;
+  transition: all 0.2s ease;
+}
+.app-input:focus {
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.55), inset 0 0 6px rgba(var(--accent-rgb), 0.15) !important;
+  outline: none;
 }
 .app-input::placeholder {
   color: #A8A29E !important;
 }
 html.dark .app-input {
   background-color: #020617 !important;
-  border-color: #334155 !important;
+  border: 1.5px solid rgba(var(--accent-rgb), 0.4) !important;
   color: #f8fafc !important;
+}
+html.dark .app-input:focus {
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.6), inset 0 0 8px rgba(var(--accent-rgb), 0.2) !important;
 }
 html.dark .app-input::placeholder {
   color: #64748b !important;
 }
 
-/* Dynamic Accent Theme Classes (Baby Pink Neon) */
+/* Dynamic Neon Glowing Elements (Adapting to user theme color) */
+.neon-element {
+  box-shadow: var(--neon-card-glow);
+  border: 1px solid rgba(var(--accent-rgb), 0.45);
+  transition: all 0.25s ease;
+}
+.neon-element:hover {
+  box-shadow: var(--neon-card-hover);
+  border-color: var(--accent-color);
+}
+
+.neon-border {
+  border: 1.5px solid rgba(var(--accent-rgb), 0.6) !important;
+  box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.3) !important;
+}
+
+.neon-pill {
+  border: 1px solid rgba(var(--accent-rgb), 0.6);
+  background-color: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent-color);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.35);
+}
+
+.neon-text-glow {
+  text-shadow: var(--neon-text-glow);
+}
+
 .btn-theme-primary {
   background-color: var(--accent-color) !important;
   color: #ffffff !important;
@@ -112,7 +165,8 @@ html.dark .app-input::placeholder {
 }
 
 .btn-theme-primary:hover {
-  filter: brightness(1.12);
+  filter: brightness(1.15);
+  box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.8), 0 0 35px rgba(var(--accent-rgb), 0.45) !important;
   transform: translateY(-1px);
 }
 
@@ -123,12 +177,13 @@ html.dark .app-input::placeholder {
 .btn-theme-gradient {
   background: linear-gradient(135deg, var(--accent-color), rgba(var(--accent-rgb), 0.8)) !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 18px rgba(var(--accent-rgb), 0.38) !important;
+  box-shadow: var(--neon-glow) !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-theme-gradient:hover {
-  filter: brightness(1.12);
+  filter: brightness(1.15);
+  box-shadow: 0 0 22px rgba(var(--accent-rgb), 0.85), 0 0 40px rgba(var(--accent-rgb), 0.5) !important;
   transform: translateY(-1px);
 }
 
@@ -139,13 +194,15 @@ html.dark .app-input::placeholder {
 .btn-theme-secondary {
   background-color: rgba(var(--accent-rgb), 0.12) !important;
   color: var(--accent-color) !important;
-  border: 1px solid rgba(var(--accent-rgb), 0.4) !important;
+  border: 1.5px solid rgba(var(--accent-rgb), 0.5) !important;
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.2) !important;
   transition: all 0.2s ease;
 }
 
 .btn-theme-secondary:hover {
-  background-color: rgba(var(--accent-rgb), 0.22) !important;
+  background-color: rgba(var(--accent-rgb), 0.24) !important;
   border-color: var(--accent-color) !important;
+  box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.45) !important;
 }
 
 .text-theme {
@@ -165,7 +222,7 @@ html.dark .app-input::placeholder {
 }
 
 .border-theme-soft {
-  border-color: rgba(var(--accent-rgb), 0.35) !important;
+  border-color: rgba(var(--accent-rgb), 0.4) !important;
 }
 
 .glow-theme {
@@ -183,16 +240,17 @@ html.dark .app-input::placeholder {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
+  background: rgba(var(--accent-rgb), 0.35);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.45);
+  background: var(--accent-color);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.8);
 }
 
 /* Smooth selection */
 ::selection {
-  background-color: rgba(var(--accent-rgb), 0.35);
+  background-color: rgba(var(--accent-rgb), 0.4);
   color: #ffffff;
 }

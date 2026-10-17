@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, X } from 'lucide-react';
 import chocolateImg from '../../assets/images/chocolate_reward_art_1791993043949.jpg';
-import bobCutMascotImg from '../../assets/images/todochan_bobcut_mascot_1791995510709.jpg';
+import bobCutMascotImg from '../../assets/images/todochan_winking_clean.png';
 import { useTheme } from '../../context/ThemeContext.tsx';
 
 interface CompletionCelebrationProps {

@@ -688,32 +688,93 @@ Supported actions:
    - targetTaskId: id of the matching task
    - reply: celebratory anime encouragement
 
-4. "chat_response": General greeting, motivation, or question.
-   - reply: cute, supportive Todo-chan anime message reminding them of their goals!
+5. "capture_unorganized": User wants to capture an unorganized thought, quick task, or brain dump (e.g. "remember to call mom", "unorganized task: finish physics record", "save for later", "quick thought: buy strawberries").
+   - text: task or thought text
+   - reply: cute, cheerful confirmation that Todo-chan saved it to Unorganized Tasks so they can sort it whenever ready!
 
 Return ONLY raw JSON conforming to:
 {
-  "action": "create_task" | "create_list" | "complete_task" | "chat_response",
+  "action": "create_task" | "create_list" | "complete_task" | "chat_response" | "capture_unorganized",
   "taskData": { ... },
   "listData": { ... },
   "targetTaskId": "...",
+  "unorganizedText": "...",
   "reply": "..."
 }`;
 
-        const modelRes = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: promptText,
-          config: {
-            systemInstruction,
-            responseMimeType: 'application/json',
-          },
-        });
+        const candidateModels = ['gemini-flash-latest', 'gemini-3.1-flash-lite', 'gemini-3.8-flash'];
+        let rawText = '';
 
-        if (modelRes.text) {
-          aiResponse = JSON.parse(modelRes.text);
+        for (const modelName of candidateModels) {
+          try {
+            const modelRes = await ai.models.generateContent({
+              model: modelName,
+              contents: promptText,
+              config: {
+                systemInstruction,
+                responseMimeType: 'application/json',
+              },
+            });
+            if (modelRes.text) {
+              rawText = modelRes.text.trim();
+              break;
+            }
+          } catch (mErr: any) {
+            console.warn(`Gemini model ${modelName} error:`, mErr?.message || mErr);
+          }
+        }
+
+        if (rawText) {
+          try {
+            aiResponse = JSON.parse(rawText);
+          } catch {
+            // If markdown code fences were returned
+            const cleaned = rawText.replace(/```(?:json)?/g, '').replace(/```/g, '').trim();
+            aiResponse = JSON.parse(cleaned);
+          }
         }
       } catch (geminiErr) {
         console.warn('Gemini API call failed, falling back to smart local NLP parser:', geminiErr);
+      }
+    }
+
+    // Normalize and validate aiResponse if obtained from Gemini
+    if (aiResponse) {
+      const act = String(aiResponse.action || '').toLowerCase().trim();
+      if (['add', 'create', 'create_task', 'new_task', 'add_task', 'task', 'schedule'].includes(act)) {
+        aiResponse.action = 'create_task';
+      } else if (['list', 'create_list', 'new_list', 'add_list'].includes(act)) {
+        aiResponse.action = 'create_list';
+      } else if (['complete', 'done', 'finish', 'complete_task', 'mark_done'].includes(act)) {
+        aiResponse.action = 'complete_task';
+      } else if (!aiResponse.action) {
+        aiResponse.action = aiResponse.taskData ? 'create_task' : (aiResponse.listData ? 'create_list' : 'chat_response');
+      }
+
+      if (aiResponse.action === 'create_task') {
+        const td = aiResponse.taskData || {};
+        if (!td.title) td.title = promptText;
+        if (!td.dueDate || !/^\d{4}-\d{2}-\d{2}$/.test(td.dueDate)) {
+          td.dueDate = today;
+        }
+        if (typeof td.urgency !== 'number') td.urgency = 6;
+        if (typeof td.importance !== 'number') td.importance = 6;
+        if (!td.matrixQuadrant || !['q1', 'q2', 'q3', 'q4'].includes(td.matrixQuadrant)) {
+          if (td.urgency >= 7 && td.importance >= 7) td.matrixQuadrant = 'q1';
+          else if (td.importance >= 7) td.matrixQuadrant = 'q2';
+          else if (td.urgency >= 7) td.matrixQuadrant = 'q3';
+          else td.matrixQuadrant = 'q4';
+        }
+        if (!td.durationMinutes) td.durationMinutes = 45;
+
+        // Ensure suggestedListId belongs to an actual list, or default to first list
+        if (!td.suggestedListId || !existingLists.some((l: any) => l.id === td.suggestedListId)) {
+          // Try to match by list name
+          const lower = promptText.toLowerCase();
+          const match = existingLists.find((l: any) => lower.includes(l.name.toLowerCase()));
+          td.suggestedListId = match ? match.id : (existingLists[0]?.id || '');
+        }
+        aiResponse.taskData = td;
       }
     }
 
@@ -732,6 +793,23 @@ Return ONLY raw JSON conforming to:
           reply: found
             ? `YAYYY! I marked "${found.title}" as completed! Todo-chan is so proud of you! ✨🎉 (｡•̀ᴗ-)✧`
             : `I'll help you complete that! Keep up the amazing momentum! 💕`,
+        };
+      }
+      // Check for unorganized task capture
+      else if (
+        lower.includes('unorganized') ||
+        lower.startsWith('capture ') ||
+        lower.startsWith('dump ') ||
+        lower.includes('save for later') ||
+        lower.includes('quick thought')
+      ) {
+        const cleaned = promptText
+          .replace(/^(unorganized task:?|capture:?|dump:?|save to unorganized:?|quick thought:?)/i, '')
+          .trim();
+        aiResponse = {
+          action: 'capture_unorganized',
+          unorganizedText: cleaned || promptText,
+          reply: `Got it, Senpai! I've saved "${cleaned || promptText}" safely in your Unorganized Tasks! You can review and sort it into your lists whenever you're ready! ✨💕 (✿◠‿◠)`,
         };
       }
       // Check for create list
